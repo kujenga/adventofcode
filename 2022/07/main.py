@@ -89,3 +89,12 @@ print('sizes:', sizes)
 
 result = sum(filter(lambda v: v < 100_000, sizes))
 print('result:', result)
+
+
+# part 2
+disk = 70000000
+update = 30000000
+free = disk - max(sizes)
+needed = update - free
+suitable = filter(lambda v: v > needed, sizes)
+print('min suitable directory:', min(suitable))
