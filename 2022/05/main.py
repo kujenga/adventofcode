@@ -1,8 +1,12 @@
 #!/usr/bin/env python3
 
 import sys
+import os
 import re
 from pprint import pprint
+
+
+MOVER = os.environ.get('CRATEMOVER', '9000')
 
 
 stack_re = re.compile(r"(?:(\[[A-Z]+\]|   )(?: |\n))+")
@@ -46,9 +50,14 @@ for line in sys.stdin:
     move = move_re.match(line)
     if move is not None:
         cnt, frm, to = [int(s) for s in move.groups()]
-        for _ in range(0, cnt):
-            transfer = stacks[frm-1].pop()
-            stacks[to-1].append(transfer)
+        if MOVER == '9000':
+            for _ in range(0, cnt):
+                transfer = stacks[frm-1].pop()
+                stacks[to-1].append(transfer)
+        elif MOVER == '9001':
+            transfer = stacks[frm-1][-cnt:]
+            stacks[frm-1] = stacks[frm-1][:-cnt]
+            stacks[to-1].extend(transfer)
         continue
 
     # all other lines must be just empty newlines.
