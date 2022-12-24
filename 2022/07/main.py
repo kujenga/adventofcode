@@ -83,6 +83,7 @@ def calc_size(entry):
     sizes.append(size)
     return size
 
+
 print('calculated sizes:', calc_size(files))
 print('sizes:', sizes)
 
