@@ -1,11 +1,14 @@
 #!/usr/bin/env python3
 
 import sys
+import os
+
+
+COUNT = int(os.environ.get('KNOTCOUNT', 2))
 
 
 # vertical, horizonal tuples
-H = (0, 0)
-T = (0, 0)
+rope = [(0, 0)] * COUNT
 visited = []
 
 
@@ -37,7 +40,8 @@ def follow(h, t):
     elif abs(ud) > 1 or abs(lr) > 1:
         lrm = move_dist(lr, diag=True)
         udm = move_dist(ud, diag=True)
-    return (t[0] + udm, t[1] + lrm)
+    result = (t[0] + udm, t[1] + lrm)
+    return result
 
 
 # no movement
@@ -50,8 +54,8 @@ assert follow((2, 3), (1, 1)) == (2, 2)
 
 
 def move(direction):
-    global H
-    global T
+    global rope
+    H = rope[0]
     if direction == 'R':
         H = (H[0], H[1]+1)
         pass
@@ -64,14 +68,22 @@ def move(direction):
     elif direction == 'D':
         H = (H[0]-1, H[1])
         pass
-    T = follow(H, T)
-    visited.append(T)
-
+    rope[0] = H
+    for i, _ in enumerate(rope):
+        if i == 0:
+            # head is dealt with above
+            continue
+        v = follow(rope[i-1], rope[i])
+        rope[i] = v
+        if i == len(rope)-1:
+            visited.append(v)
 
 
 for line in sys.stdin:
     direction, distance = line.strip().split()
+    #  print(f"{direction} {distance}")
     for _ in range(0, int(distance)):
         move(direction)
+        #  print(rope)
 
 print('visited count:', len(set(visited)))
