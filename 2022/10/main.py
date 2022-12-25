@@ -16,6 +16,16 @@ class Cmd(Enum):
             return 2
 
 
+class CRT:
+    def __init__(self):
+        # CRT display
+        self.display = [['_'] * 40 for _ in range(6)]
+
+    def output(self):
+        for row in self.display:
+            print(''.join(row))
+
+
 class VM:
     def __init__(self, program):
         # VM state
@@ -24,19 +34,31 @@ class VM:
         # Program execution state
         self.cmd = None
         self.counter = 0
-        self.registers = [1]
+        self.X = 1
         # Signals
         self.signal_strength = []
+        # CRT
+        self.crt = CRT()
 
     def __str__(self):
-        return f"<cycles({self.cycles}), program({len(program)}), cmd({self.cmd}), ctr({self.counter}), X({self.registers[0]})>"
+        return f"<cycles({self.cycles}), program({len(program)}), cmd({self.cmd}), ctr({self.counter}), X({self.X})>"
 
     def cycle(self):
+        # update CRT display
+        col = self.cycles % 40
+        row = int(self.cycles / 40) % 6
+        draw = abs((self.cycles % 40) - self.X) <= 1
+        #  print(f"{self.cycles}: setting {row}x{col}, sprint center: {self.X}, draw: {draw}")
+        if draw:
+            self.crt.display[row][col] = '#'
+        else:
+            self.crt.display[row][col] = '.'
+
         self.cycles += 1
         #  print(self)
         # capture signal strength
         if (self.cycles - 20) % 40 == 0:
-            signal = self.registers[0] * self.cycles
+            signal = self.X * self.cycles
             print(f"capturing at {self.cycles} signal {signal}")
             self.signal_strength.append(signal)
 
@@ -56,11 +78,12 @@ class VM:
         # Then execute when in zero counter state (execution complete)
         if self.counter == 0:
             if self.cmd[0] == Cmd.ADDX:
-                self.registers[0] += self.cmd[1]
+                self.X += self.cmd[1]
 
     def run(self):
         while len(self.program) > 0 or self.counter > 0:
             self.step()
+            #  vm.crt.output()
 
 
 program = []
@@ -81,6 +104,9 @@ vm = VM(program)
 vm.run()
 
 print('cycles:', vm.cycles)
-print('register:', vm.registers)
+
 print('signal strengths:', vm.signal_strength)
 print('signal strength sum:', sum(vm.signal_strength))
+
+print('CRT:')
+vm.crt.output()
