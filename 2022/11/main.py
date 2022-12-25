@@ -1,14 +1,38 @@
 #!/usr/bin/env python3
 
 import sys
+import os
 from pprint import pprint
+
+
+DIVISOR = int(os.environ.get('DIVISOR', '3'))
+ROUNDS = int(os.environ.get('ROUNDS', '20'))
+
+
+class Item:
+    def __init__(self, worry, monkeys):
+        self.worry = worry
+        self.monkeys = monkeys
+        pass
+
+    def __str__(self):
+        return f"<Item worry={self.worry}, monkeys={len(self.monkeys)}>"
+
+    def inspect(self, monkey):
+        worrya = self.worry
+        worryb = monkey.op(worrya)
+        worryc = worryb // DIVISOR
+        test = worryc % monkey.test_divisor == 0
+        #  print(f"inspect: {item} -> {worrya} -> {worryb} -> {worryc} -> {test}")
+        self.worry = worryc
+        return test
 
 
 class Monkey:
     def __init__(self, name, items=[]):
         self.name = name
         self.op = None
-        self.test = None
+        self.test_divisor = None
         self.if_true = None
         self.if_false = None
         # State
@@ -16,7 +40,7 @@ class Monkey:
         self.inspect_count = 0
 
     def __str__(self):
-        return f"<Monkey name={repr(self.name)}, items={repr(self.items)}, op={repr(self.op)}, test={repr(self.test)}, if_true={repr(self.if_true)}, if_false={repr(self.if_false)}>"  # noqa
+        return f"<Monkey name={repr(self.name)}, items={len(self.items)}, op={repr(self.op)}, test=/{self.test_divisor}, if_true={repr(self.if_true)}, if_false={repr(self.if_false)}>"  # noqa
 
     def __repr__(self):
         return self.__str__()
@@ -24,12 +48,7 @@ class Monkey:
     def inspect(self):
         self.inspect_count += 1
         item = self.items.pop(0)
-        worrya = item
-        worryb = self.op(worrya)
-        worryc = int(worryb / 3)
-        test = self.test(worryc)
-        #  print(f"inspect: {item} -> {worrya} -> {worryb} -> {worryc} -> {test}")
-        return (worryc, test)
+        return (item, item.inspect(self))
 
 
 def make_op(operation, operand):
@@ -48,12 +67,6 @@ def make_op(operation, operand):
     return op
 
 
-def make_test(divisor):
-    def test(worry):
-        return worry % divisor == 0
-    return test
-
-
 monkeys = []
 monkey_map = {}
 
@@ -64,7 +77,8 @@ for line in sys.stdin:
         monkeys.append(m)
         monkey_map[name] = m
     elif line.startswith('  Starting items:'):
-        monkeys[-1].items = [int(i.strip()) for i in line[17:].split(',')]
+        worries = [int(i.strip()) for i in line[17:].split(',')]
+        monkeys[-1].items = [Item(w, monkeys) for w in worries]
     elif line.startswith('  Operation:'):
         a, op, b = [o.strip() for o in line[19:].split()]
         assert a == 'old'
@@ -72,7 +86,7 @@ for line in sys.stdin:
     elif line.startswith('  Test:'):
         assert 'Test: divisible by' in line
         divisor = int(line[len('  Test: divisible by '):].strip())
-        monkeys[-1].test = make_test(divisor)
+        monkeys[-1].test_divisor = divisor
     elif line.startswith('    If true: throw to monkey '):
         start = len('    If true: throw to monkey ')
         monkeys[-1].if_true = int(line[start:].strip())
@@ -83,9 +97,7 @@ for line in sys.stdin:
 print("initial monkeys:")
 pprint(monkeys)
 
-rounds = 20
-
-for round in range(rounds):
+for round in range(ROUNDS):
     for monkey in monkeys:
         while len(monkey.items) > 0:
             item, test = monkey.inspect()
