@@ -3,6 +3,7 @@
 import sys
 import os
 from pprint import pprint
+from numpy import prod
 
 
 DIVISOR = int(os.environ.get('DIVISOR', '3'))
@@ -19,12 +20,17 @@ class Item:
         return f"<Item worry={self.worry}, monkeys={len(self.monkeys)}>"
 
     def inspect(self, monkey):
+        # Global modulus is the product of all values.
+        all_mod = prod([m.test_divisor for m in self.monkeys])
+
         worrya = self.worry
-        worryb = monkey.op(worrya)
+        # Execute the opperation in the modular space.
+        worryb = monkey.op(worrya, modulus=all_mod)
         worryc = worryb // DIVISOR
-        test = worryc % monkey.test_divisor == 0
+        worrymod = worryc % all_mod
+        test = worrymod % monkey.test_divisor == 0
         #  print(f"inspect: {item} -> {worrya} -> {worryb} -> {worryc} -> {test}")
-        self.worry = worryc
+        self.worry = worrymod
         return test
 
 
@@ -52,16 +58,19 @@ class Monkey:
 
 
 def make_op(operation, operand):
-    def op(worry):
+    def op(worry, modulus=None):
         a = worry
         if operand == 'old':
             b = worry
         else:
             b = int(operand)
+        # Execute the given operation on modulus. See:
+        # https://www.khanacademy.org/computing/computer-science/cryptography/modarithmetic/a/modular-addition-and-subtraction
+        # https://www.khanacademy.org/computing/computer-science/cryptography/modarithmetic/a/modular-multiplication
         if operation == '+':
-            return a + b
+            return a % modulus + b % modulus
         elif operation == '*':
-            return a * b
+            return a % modulus * b % modulus
         else:
             assert False, f"unknown operation: {operation}"
     return op
