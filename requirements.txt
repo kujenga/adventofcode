@@ -1,0 +1,6 @@
+# Python requirements file
+
+# Numeric/array computations
+numpy
+# Image rendering/processing
+Pillow
