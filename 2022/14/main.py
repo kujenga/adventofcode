@@ -2,6 +2,9 @@
 
 import sys
 import numpy as np
+from PIL import Image
+
+np.set_printoptions(threshold=sys.maxsize, linewidth=sys.maxsize)
 
 sand_origin = (500, 0)
 
@@ -14,13 +17,14 @@ for line in sys.stdin:
         x, y = point.split(',')
         path.append([int(x), int(y)])
     rocks.append(path)
-print(rocks)
+#  print(rocks)
 
 # Setup cave
-ROCK = 8
-SAND = 1
+ROCK = 255
+FLOOR = 200
+SAND = 100
 dim = 750
-cave = np.zeros([dim, dim], dtype=np.int8)  # big enough
+cave = np.zeros([dim, dim], dtype=np.uint8)  # big enough
 for rock in rocks:
     for i, cur in enumerate(rock):
         if i == 0:
@@ -32,9 +36,13 @@ for rock in rocks:
         for i in range(xr[0], xr[1]+1):
             for j in range(yr[0], yr[1]+1):
                 cave[i, j] = ROCK
+# Draw floor
+locations = np.argwhere(cave)
+max_depth = np.amax(locations, axis=0)[1]
+print('max rock depth:', max_depth)
+cave[:, max_depth+2] = FLOOR
 
-np.set_printoptions(threshold=sys.maxsize, linewidth=sys.maxsize)
-print(cave)
+#  print(cave)
 
 # Simulate sand
 
@@ -62,13 +70,18 @@ while filling:
         n = next_move(grain)
         #  print(f"sand grain moving from {grain} to {n}")
         if n is None:
-            print(f"sand grain {grains} landed at {grain}")
+            if grains % 1000 == 0:
+                print(f"sand grain {grains} landed at {grain}")
+                Image.fromarray(cave.transpose()).save('cave.png')
             grains += 1
             cave[grain] = SAND
+            if grain == sand_origin:
+                print('found origin!')
+                filling = False
             break
-        # Sand spilling out the bottom
-        if n[1] >= dim-1:
-            filling = False
+        # Sand reached the floor, log a message for part 1.
+        if cave[n] == FLOOR:
+            print(f"floor reached at {grains} grains")
         grain = n
 
 print('grains total:', grains)
