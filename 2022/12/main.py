@@ -2,7 +2,6 @@
 
 import sys
 import numpy as np
-from pprint import pprint
 from functools import total_ordering
 import heapq
 
@@ -118,12 +117,30 @@ class Explorer:
     def explore(self):
         p = None
         while not self.end.coincident(p):
+            if len(self.paths) == 0:
+                # Dead end!
+                return None
             p = heapq.heappop(self.paths)
             self.possibles(p)
-            print('current paths:', self.paths)
+            #  print('current paths:', self.paths)
         return p
 
 
-e = Explorer(s, e)
-p = e.explore()
-print('final path:', p)
+exp = Explorer(s, e)
+p = exp.explore()
+print('starting point best path:', p)
+
+trails = []
+for i, row in enumerate(grid):
+    for j, spot in enumerate(row):
+        v = grid[i][j]
+        if v != 'a' and v != 'S':
+            continue
+        print(f"starting search from: {i}x{j} -> {v}")
+        exp = Explorer((i, j), e)
+        trail = exp.explore()
+        print('final path for {i}x{j}:', trail)
+        if trail is not None:
+            trails.append(trail)
+
+print('minimal trail:', min(trails))
